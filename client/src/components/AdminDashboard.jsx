@@ -3,7 +3,9 @@ import axios from 'axios';
 import { Users, Shield, Trash2, ShieldCheck, History, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_URL = 'http://localhost:5000/api/admin';
+import { API_BASE_URL } from '../config';
+
+const API_URL = `${API_BASE_URL}/admin`;
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);

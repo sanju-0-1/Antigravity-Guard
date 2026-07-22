@@ -3,7 +3,9 @@ import axios from 'axios';
 import { Shield, Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_URL = 'http://localhost:5000/api/auth';
+import { API_BASE_URL } from '../config';
+
+const API_URL = `${API_BASE_URL}/auth`;
 
 const Login = ({ onLogin, onSwitch }) => {
   const [formData, setFormData] = useState({

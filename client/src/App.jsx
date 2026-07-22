@@ -13,7 +13,9 @@ import './App.css';
 import { initParticlesEngine, Particles } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from './config';
+
+const API_URL = API_BASE_URL;
 
 function App() {
   const [init, setInit] = useState(false);
