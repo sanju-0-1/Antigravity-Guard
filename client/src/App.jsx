@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Shield, AlertTriangle, CheckCircle, Search, Link as LinkIcon, FileText, 
   History, Info, ExternalLink, LogOut, User as UserIcon, MessageSquare, 
-  Flag, Share2, BarChart3, ShieldCheck, Activity, Lock, Globe, X, Send, RefreshCw
+  Flag, Share2, BarChart3, ShieldCheck, Activity, Lock, Globe, X, Send, RefreshCw, UploadCloud
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Login from './components/Login';
@@ -66,6 +66,32 @@ function App() {
     } catch (err) { console.error(err); }
   };
 
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleTabChange = (type) => {
+    setScanType(type);
+    setInput('');
+    setImageFile(null);
+    setResult(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
   const handleScan = async (e) => {
     e.preventDefault();
     setIsScanning(true);
@@ -73,6 +99,11 @@ function App() {
     try {
       let res;
       if (scanType === 'image') {
+        if (!imageFile) {
+          alert('Please select an image file to scan.');
+          setIsScanning(false);
+          return;
+        }
         const formData = new FormData();
         formData.append('image', imageFile);
         res = await axios.post(`${API_URL}/scan-image`, formData, getAuthHeaders());
@@ -251,20 +282,52 @@ function App() {
 
               <div className="scanner-container glass-card">
                 <div className="tab-buttons">
-                  <button className={scanType === 'url' ? 'tab-btn active' : 'tab-btn'} onClick={() => setScanType('url')}><LinkIcon size={20} /> URL</button>
-                  <button className={scanType === 'text' ? 'tab-btn active' : 'tab-btn'} onClick={() => setScanType('text')}><FileText size={20} /> Text</button>
-                  <button className={scanType === 'whatsapp' ? 'tab-btn active' : 'tab-btn'} onClick={() => setScanType('whatsapp')}><MessageSquare size={20} color="#22C55E" /> WhatsApp</button>
-                  <button className={scanType === 'image' ? 'tab-btn active' : 'tab-btn'} onClick={() => setScanType('image')}><Activity size={20} /> OCR</button>
+                  <button className={scanType === 'url' ? 'tab-btn active' : 'tab-btn'} onClick={() => handleTabChange('url')}><LinkIcon size={20} /> URL</button>
+                  <button className={scanType === 'text' ? 'tab-btn active' : 'tab-btn'} onClick={() => handleTabChange('text')}><FileText size={20} /> Text</button>
+                  <button className={scanType === 'whatsapp' ? 'tab-btn active' : 'tab-btn'} onClick={() => handleTabChange('whatsapp')}><MessageSquare size={20} color="#22C55E" /> WhatsApp</button>
+                  <button className={scanType === 'image' ? 'tab-btn active' : 'tab-btn'} onClick={() => handleTabChange('image')}><Activity size={20} /> OCR</button>
                 </div>
 
                 <form onSubmit={handleScan} className="scan-form">
-                  <div className="input-with-icon">
-                    <Search className="field-icon" size={20} color="var(--primary)" />
-                    <textarea 
-                      placeholder={scanType === 'url' ? "Paste a suspicious link (e.g. bit.ly/free-offer)" : "Paste a suspicious message or chat content..."}
-                      value={input} onChange={(e) => setInput(e.target.value)} rows={4} required 
-                    />
-                  </div>
+                  {scanType === 'image' ? (
+                    <div 
+                      className={`file-upload-container ${isDragOver ? 'drag-over' : ''}`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => setImageFile(e.target.files[0])} 
+                        id="image-upload"
+                        className="file-upload-input"
+                        required
+                      />
+                      <label htmlFor="image-upload" className="file-upload-label">
+                        <UploadCloud size={40} className="upload-icon" />
+                        {imageFile ? (
+                          <div className="selected-file-info">
+                            <span className="file-name">{imageFile.name}</span>
+                            <span className="file-size">({(imageFile.size / 1024).toFixed(1)} KB)</span>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="upload-title">Upload Screenshot / Image</span>
+                            <span className="upload-subtitle">Drag and drop or click to browse</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="input-with-icon">
+                      <Search className="field-icon" size={20} color="var(--primary)" />
+                      <textarea 
+                        placeholder={scanType === 'url' ? "Paste a suspicious link (e.g. bit.ly/free-offer)" : scanType === 'whatsapp' ? "Paste suspicious WhatsApp message or chat..." : "Paste a suspicious message or chat content..."}
+                        value={input} onChange={(e) => setInput(e.target.value)} rows={4} required 
+                      />
+                    </div>
+                  )}
                   <div className="form-info">
                     <span className="privacy-note"><Lock size={12} /> We do not store your data</span>
                     <span className="analysis-note">AI + Multi-engine detection</span>
