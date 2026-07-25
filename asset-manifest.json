@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/static/css/main.b4c3145c.css",
-    "main.js": "/static/js/main.2ce88151.js",
-    "index.html": "/index.html",
-    "main.b4c3145c.css.map": "/static/css/main.b4c3145c.css.map",
-    "main.2ce88151.js.map": "/static/js/main.2ce88151.js.map"
+    "main.css": "/Antigravity-Guard/static/css/main.b4c3145c.css",
+    "main.js": "/Antigravity-Guard/static/js/main.cc3eeb8e.js",
+    "index.html": "/Antigravity-Guard/index.html",
+    "main.b4c3145c.css.map": "/Antigravity-Guard/static/css/main.b4c3145c.css.map",
+    "main.cc3eeb8e.js.map": "/Antigravity-Guard/static/js/main.cc3eeb8e.js.map"
   },
   "entrypoints": [
     "static/css/main.b4c3145c.css",
-    "static/js/main.2ce88151.js"
+    "static/js/main.cc3eeb8e.js"
   ]
 }
