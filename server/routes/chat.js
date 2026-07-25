@@ -21,7 +21,7 @@ router.post('/', protect, async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
 
     const prompt = `
-      You are an expert Cybersecurity AI Assistant for the "Antigravity Guard" platform.
+      You are an expert Cybersecurity AI Assistant for the "Cyber Guard" platform.
       Your goal is to explain phishing and scam threats to users in a non-technical, helpful way.
       
       CURRENT SCAN CONTEXT:

@@ -48,7 +48,7 @@ const Register = ({ onRegister, onSwitch }) => {
           <Shield size={32} color="var(--primary)" />
         </div>
         <h2>Create Account</h2>
-        <p>Join Antigravity Guard to shield your digital life</p>
+        <p>Join Cyber Guard to shield your digital life</p>
       </div>
 
       {error && (

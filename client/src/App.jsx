@@ -169,7 +169,7 @@ function App() {
       <nav className="navbar container">
         <div className="logo" onClick={() => setView('home')} style={{ cursor: 'pointer' }}>
           <Shield className="logo-icon" color="var(--primary)" size={28} />
-          <span>Antigravity Guard</span>
+          <span>Cyber Guard</span>
         </div>
         <div className="nav-links">
           <button onClick={() => setView('home')} className={view === 'home' ? 'active' : ''}>
@@ -422,7 +422,7 @@ function App() {
       </AnimatePresence>
 
       <footer className="footer glass-card">
-        <p>© 2026 Antigravity Guard. Intelligent Cybersecurity Intelligence Portfolio.</p>
+        <p>© 2026 Cyber Guard. Intelligent Cybersecurity Intelligence Portfolio.</p>
       </footer>
     </div>
   );
