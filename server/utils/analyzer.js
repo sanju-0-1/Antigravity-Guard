@@ -6,7 +6,11 @@
 
 const analyzeURL = (url) => {
   try {
-    const urlObj = new URL(url);
+    let formattedUrl = url ? url.trim() : '';
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = 'http://' + formattedUrl;
+    }
+    const urlObj = new URL(formattedUrl);
     const engines = [
       structuralEngine(urlObj),
       domainReputationEngine(urlObj),

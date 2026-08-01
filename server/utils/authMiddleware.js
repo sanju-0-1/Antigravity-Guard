@@ -15,18 +15,32 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
 
-      // Get user from the token
-      req.user = await User.findById(decoded.id).select('-password');
+      // Get user from the token if DB is connected
+      if (mongoose.connection.readyState === 1) {
+        try {
+          req.user = await User.findById(decoded.id).select('-password');
+        } catch (dbErr) {
+          console.error('DB query error in protect:', dbErr.message);
+        }
+      }
 
-      next();
+      if (!req.user) {
+        req.user = { 
+          _id: decoded.id || 'fallback_user_id', 
+          username: decoded.username || 'User', 
+          role: decoded.role || 'user' 
+        };
+      }
+
+      return next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ error: 'Not authorized, token failed' });
+      console.error('Auth token verification error:', error.message);
+      return res.status(401).json({ error: 'Not authorized, token failed' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ error: 'Not authorized, no token' });
+    return res.status(401).json({ error: 'Not authorized, no token' });
   }
 };
 

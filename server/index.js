@@ -53,7 +53,7 @@ app.post('/api/scan', protect, async (req, res) => {
     }
 
     const scanData = {
-      userId: req.user._id,
+      userId: req.user ? req.user._id : 'guest',
       type,
       content,
       ...analysisResults,
@@ -71,7 +71,7 @@ app.post('/api/scan', protect, async (req, res) => {
     }
   } catch (err) {
     console.error('Scan error:', err);
-    res.status(500).json({ error: 'Server error during analysis' });
+    res.status(500).json({ error: 'Server error during analysis: ' + (err.message || 'Unknown error') });
   }
 });
 
@@ -113,7 +113,7 @@ app.post('/api/scan-image', protect, upload.single('image'), async (req, res) =>
     const analysisResults = analyzeText(text);
 
     const scanData = {
-      userId: req.user._id,
+      userId: req.user ? req.user._id : 'guest',
       type: 'text', // Log it as text for historical consistency
       content: `[Extracted from Image]: ${text.substring(0, 100)}...`,
       ...analysisResults,
@@ -137,7 +137,7 @@ app.post('/api/scan-image', protect, upload.single('image'), async (req, res) =>
 
 app.get('/api/history', protect, async (req, res) => {
   try {
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState === 1 && req.user?._id) {
       const history = await Scan.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(10);
       res.json(history);
     } else {
@@ -148,6 +148,10 @@ app.get('/api/history', protect, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
