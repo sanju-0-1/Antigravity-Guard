@@ -262,7 +262,7 @@ function App() {
               </div>
               <div className="history-grid">
                 {history.map(item => (
-                  <div key={item._id} className="history-item glass-card">
+                  <div key={item._id} className="history-item glass-card" onClick={() => setResult(item)} style={{ cursor: 'pointer' }}>
                     <div className="item-type">{item.type.toUpperCase()}</div>
                     <p className="item-content">{item.content.substring(0, 80)}...</p>
                     <div className="item-footer">
@@ -370,58 +370,91 @@ function App() {
                   <p>Extract text from screenshots</p>
                 </div>
               </div>
-
-              {result && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="result-card glass-card">
-                  <div className="result-header">
-                    <div className="risk-badge">
-                      {result.riskLevel === 'Safe' ? <ShieldCheck size={60} color="var(--safe)" /> : <AlertTriangle size={60} color={`var(--${result.riskLevel.toLowerCase()})`} />}
-                      <div className="risk-info">
-                        <div className="risk-top">
-                          <h3>{result.riskLevel} Threat Level</h3>
-                          {result.reportedByCommunity && <span className="community-flag">Global Report #{result.reportCount}</span>}
-                        </div>
-                        <p>Confidence Intelligence: {result.riskScore}%</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="engine-breakdown">
-                    <h4><BarChart3 size={16} /> Multi-Engine Intelligence</h4>
-                    <div className="engine-grid">
-                      {result.engineBreakdown && Object.entries(result.engineBreakdown).map(([name, score]) => (
-                        <div key={name} className="engine-stat">
-                          <span className="stat-name">{name}</span>
-                          <span className="stat-val">{score}%</span>
-                          <div className="stat-bar"><div className="stat-bar-fill" style={{ width: `${score}%` }}></div></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="result-actions">
-                    <button onClick={handleReport} className="action-btn report-btn" disabled={isReporting || result.reportedByCommunity}>
-                      <Flag size={16} /> {result.reportedByCommunity ? 'Reported' : 'Report Threat'}
-                    </button>
-                    <button className="action-btn share-btn"><Share2 size={16} /> Export Intel</button>
-                  </div>
-
-                  <div className="result-details">
-                    <div className="detail-section">
-                      <h4><AlertTriangle size={16} /> Why this is risky</h4>
-                      <ul>{result.details.map((d, i) => <li key={i}>{d}</li>)}</ul>
-                    </div>
-                    <div className="detail-section">
-                      <h4><ShieldCheck size={16} /> Recommended Action</h4>
-                      <ul>{result.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+
+      {/* Scan Result Modal Popup */}
+      <AnimatePresence>
+        {result && (
+          <motion.div 
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setResult(null)}
+          >
+            <motion.div 
+              className="modal-card glass-card"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                className="modal-close-btn" 
+                onClick={() => setResult(null)}
+                title="Close Popup"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="result-header">
+                <div className="risk-badge">
+                  {result.riskLevel === 'Safe' ? (
+                    <ShieldCheck size={60} color="var(--safe)" />
+                  ) : (
+                    <AlertTriangle size={60} color={`var(--${result.riskLevel ? result.riskLevel.toLowerCase() : 'safe'})`} />
+                  )}
+                  <div className="risk-info">
+                    <div className="risk-top">
+                      <h3>{result.riskLevel} Threat Level</h3>
+                      {result.reportedByCommunity && <span className="community-flag">Global Report #{result.reportCount}</span>}
+                    </div>
+                    <p>Confidence Intelligence: {result.riskScore}%</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="engine-breakdown">
+                <h4><BarChart3 size={16} /> Multi-Engine Intelligence</h4>
+                <div className="engine-grid">
+                  {result.engineBreakdown && Object.entries(result.engineBreakdown).map(([name, score]) => (
+                    <div key={name} className="engine-stat">
+                      <span className="stat-name">{name}</span>
+                      <span className="stat-val">{score}%</span>
+                      <div className="stat-bar"><div className="stat-bar-fill" style={{ width: `${score}%` }}></div></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="result-actions">
+                <button onClick={handleReport} className="action-btn report-btn" disabled={isReporting || result.reportedByCommunity}>
+                  <Flag size={16} /> {result.reportedByCommunity ? 'Reported' : 'Report Threat'}
+                </button>
+                <button className="action-btn share-btn"><Share2 size={16} /> Export Intel</button>
+              </div>
+
+              <div className="result-details">
+                {result.details && result.details.length > 0 && (
+                  <div className="detail-section">
+                    <h4><AlertTriangle size={16} /> Why this is risky</h4>
+                    <ul>{result.details.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                  </div>
+                )}
+                {result.recommendations && result.recommendations.length > 0 && (
+                  <div className="detail-section">
+                    <h4><ShieldCheck size={16} /> Recommended Action</h4>
+                    <ul>{result.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* AI Assistant Chat */}
       <div className="ai-container">
