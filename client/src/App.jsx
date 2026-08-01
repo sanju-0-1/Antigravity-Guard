@@ -434,32 +434,47 @@ function App() {
                   )}
                   <div className="risk-info">
                     <div className="risk-top">
-                      <h3>{result.riskLevel} Threat Level</h3>
+                      <h3>
+                        {result.riskLevel === 'Safe' ? 'Safe - No Scam Detected' : result.riskLevel === 'Suspicious' ? 'Suspicious - Caution Advised' : 'High Scam Risk - Dangerous'}
+                      </h3>
                       {result.reportedByCommunity && <span className="community-flag">Global Report #{result.reportCount}</span>}
                     </div>
-                    <p>Confidence Intelligence: {result.riskScore}%</p>
+                    <p>{result.riskLevel === 'Safe' ? 'Safety Confidence: 100%' : `Scam Likelihood: ${result.riskScore}%`}</p>
                   </div>
                 </div>
               </div>
 
               <div className="engine-breakdown">
-                <h4><BarChart3 size={16} /> Multi-Engine Intelligence</h4>
+                <h4><BarChart3 size={16} /> AI & Safety Checks</h4>
                 <div className="engine-grid">
-                  {result.engineBreakdown && Object.entries(result.engineBreakdown).map(([name, score]) => (
-                    <div key={name} className="engine-stat">
-                      <span className="stat-name">{name}</span>
-                      <span className="stat-val">{score}%</span>
-                      <div className="stat-bar"><div className="stat-bar-fill" style={{ width: `${score}%` }}></div></div>
-                    </div>
-                  ))}
+                  {result.engineBreakdown && Object.entries(result.engineBreakdown).map(([name, score]) => {
+                    const engineLabelMap = {
+                      'Gemini AI Intelligence': 'AI Threat Detection',
+                      'Address Safety': 'Web Link Safety',
+                      'Identity Check': 'Brand & Company Check',
+                      'Smart Scanner': 'Link Pattern Check',
+                      'Trust Scanner': 'Message Content Check',
+                      'Pressure Detector': 'Urgency & Panic Check',
+                      'Faker Finder': 'Impersonation Check',
+                      'Chat Security': 'WhatsApp Safety Check'
+                    };
+                    const label = engineLabelMap[name] || name;
+                    return (
+                      <div key={name} className="engine-stat">
+                        <span className="stat-name">{label}</span>
+                        <span className="stat-val">{score}%</span>
+                        <div className="stat-bar"><div className="stat-bar-fill" style={{ width: `${score}%` }}></div></div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="result-actions">
                 <button onClick={handleReport} className="action-btn report-btn" disabled={isReporting || result.reportedByCommunity}>
-                  <Flag size={16} /> {result.reportedByCommunity ? 'Reported' : 'Report Threat'}
+                  <Flag size={16} /> {result.reportedByCommunity ? 'Reported' : 'Report as Scam'}
                 </button>
-                <button className="action-btn share-btn"><Share2 size={16} /> Export Intel</button>
+                <button className="action-btn share-btn"><Share2 size={16} /> Share Report</button>
               </div>
 
               <div className="result-details">
