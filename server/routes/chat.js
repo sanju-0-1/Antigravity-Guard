@@ -18,7 +18,7 @@ router.post('/', protect, async (req, res) => {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       You are an expert Cybersecurity AI Assistant for the "Cyber Guard" platform.

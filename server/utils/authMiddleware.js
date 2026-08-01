@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
@@ -11,6 +12,10 @@ const protect = async (req, res, next) => {
     try {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
+
+      if (!token || token === 'null' || token === 'undefined') {
+        return res.status(401).json({ error: 'Not authorized, no valid token' });
+      }
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');

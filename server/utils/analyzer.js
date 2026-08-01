@@ -4,7 +4,89 @@
  * Focused on non-technical, user-friendly language.
  */
 
-const analyzeURL = (url) => {
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+let genAI = null;
+if (process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
+
+const analyzeWithAI = async (type, content, heuristicResult) => {
+  if (!genAI || !process.env.GEMINI_API_KEY) {
+    return heuristicResult;
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const prompt = `
+      You are an expert Cybersecurity AI Assistant for "Cyber Guard".
+      Analyze the following ${type} content scanned by a user.
+      CONTENT TO ANALYZE: "${content}"
+
+      Perform 3 tasks:
+      1. Explain in 1-2 simple non-technical sentences what this ${type} (link, message, or image OCR text) is about.
+      2. Evaluate if it is Safe, Suspicious, or Malicious and assign a risk score (0 = completely safe, 100 = definitely malicious).
+      3. Write a vivid 1-2 sentence real-world analogy/example tailored specifically to this scanned content so that non-technical people (like elderly family members) can easily understand why it is safe or dangerous.
+
+      Return your response STRICTLY as a JSON object with this exact schema:
+      {
+        "riskScore": number (0 to 100),
+        "riskLevel": "Safe" | "Suspicious" | "Malicious",
+        "about": "Clear sentence explaining what the content is about",
+        "details": ["Point 1 explaining safety or threat details", "Point 2 explaining what it is"],
+        "recommendations": ["Actionable recommendation 1", "Actionable recommendation 2"],
+        "example": "A custom 1-2 sentence real-world analogy/example written by AI explaining this specific scan in everyday terms."
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const aiData = JSON.parse(result.response.text());
+
+    const isSafe = (aiData.riskScore === 0) || (aiData.riskLevel === 'Safe');
+
+    const details = [
+      aiData.about ? `[Content Analysis]: ${aiData.about}` : null,
+      ...(aiData.details || []),
+      ...(heuristicResult.details || [])
+    ].filter(Boolean);
+
+    // Deduplicate details
+    const uniqueDetails = Array.from(new Set(details));
+
+    const recommendations = isSafe ? [
+      'The message appears safe based on our current analysis.',
+      'Continue using normal caution when interacting with emails or messages.',
+      'Verify the sender if the request is unexpected or involves sensitive information.',
+      'Never share passwords or one-time verification codes.'
+    ] : [
+      'Do not click suspicious links.',
+      'Do not download unexpected attachments.',
+      'Do not provide passwords or personal information.',
+      'Report or delete the message if confirmed malicious.'
+    ];
+
+    return {
+      riskScore: typeof aiData.riskScore === 'number' ? aiData.riskScore : heuristicResult.riskScore,
+      riskLevel: aiData.riskLevel || heuristicResult.riskLevel,
+      details: uniqueDetails,
+      engineBreakdown: {
+        "Gemini AI Intelligence": isSafe ? 0 : (aiData.riskScore || 0),
+        ...heuristicResult.engineBreakdown
+      },
+      recommendations,
+      example: aiData.example || null
+    };
+  } catch (err) {
+    console.error('AI Analysis fallback to heuristics:', err.message);
+    return heuristicResult;
+  }
+};
+
+const analyzeURL = async (url) => {
   try {
     let formattedUrl = url ? url.trim() : '';
     if (!/^https?:\/\//i.test(formattedUrl)) {
@@ -17,29 +99,32 @@ const analyzeURL = (url) => {
       logicHeuristicEngine(urlObj)
     ];
 
-    return consolidateEngines(engines, 'url');
+    const heuristicResult = consolidateEngines(engines, 'url');
+    return await analyzeWithAI('url', url, heuristicResult);
   } catch (err) {
-    return {
+    const fallback = {
       riskScore: 100,
       riskLevel: 'Malicious',
       details: ['The web address is broken or written in a very strange way.'],
       recommendations: ['Critical: Do not click. This link is broken or faked to trick your browser.'],
       engineBreakdown: { "Security Engine": 100 }
     };
+    return await analyzeWithAI('url', url, fallback);
   }
 };
 
-const analyzeText = (text) => {
+const analyzeText = async (text) => {
   const engines = [
     sentimentEngine(text),
     impersonationEngine(text),
     urgencyEngine(text)
   ];
 
-  return consolidateEngines(engines, 'text');
+  const heuristicResult = consolidateEngines(engines, 'text');
+  return await analyzeWithAI('text', text, heuristicResult);
 };
 
-const analyzeWhatsApp = (text) => {
+const analyzeWhatsApp = async (text) => {
   const content = text.toLowerCase();
   const engines = [
     sentimentEngine(text),
@@ -68,7 +153,8 @@ const analyzeWhatsApp = (text) => {
     })()
   ];
 
-  return consolidateEngines(engines, 'whatsapp');
+  const heuristicResult = consolidateEngines(engines, 'whatsapp');
+  return await analyzeWithAI('whatsapp', text, heuristicResult);
 };
 
 // --- ENGINES (Non-IT Explanations) ---
@@ -205,42 +291,36 @@ const consolidateEngines = (engines, type) => {
   if (riskScore >= 70) riskLevel = 'Malicious';
   else if (riskScore >= 30) riskLevel = 'Suspicious';
 
-  if (details.length === 0) details.push('The scanner didn\'t find any common tricks in this message.');
+  if (riskScore === 0 || details.length === 0) {
+    details.length = 0;
+    details.push('No common phishing indicators were detected during analysis. The message does not contain suspicious links, credential requests, impersonation attempts, or other common phishing techniques.');
+  }
 
   return {
     riskScore,
     riskLevel,
     details,
     engineBreakdown,
-    recommendations: getRecommendations(riskLevel, type)
+    recommendations: getRecommendations(riskLevel, type, riskScore)
   };
 };
 
-const getRecommendations = (riskLevel, type) => {
-  const base = {
-    Safe: [
-      'Even if it looks safe, always double-check the sender\'s name.',
-      'Never give out passwords, even if the message seems friendly.'
-    ],
-    Suspicious: [
-      'Be very careful. Don\'t type any personal info or passwords.',
-      'Go to the real website yourself instead of clicking this link.',
-      'Check if the person sending this really who they say they are.'
-    ],
-    Malicious: [
-      'STOP: Do not click and do not reply.',
-      'Delete this message and block the sender immediately.',
-      'Remember: Real companies will never ask for your secrets via a message.'
-    ]
-  };
+const getRecommendations = (riskLevel, type, riskScore = 0) => {
+  if (riskScore === 0 || riskLevel === 'Safe') {
+    return [
+      'The message appears safe based on our current analysis.',
+      'Continue using normal caution when interacting with emails or messages.',
+      'Verify the sender if the request is unexpected or involves sensitive information.',
+      'Never share passwords or one-time verification codes.'
+    ];
+  }
 
-  const specific = {
-    whatsapp: ['Block this phone number on WhatsApp.', 'Tell your friends so they don\'t get tricked too.'],
-    url: ['Close the tab immediately.', 'Do not download anything if the page opens.'],
-    text: ['Ignore the threats in this message.', 'Delete this to stay safe.']
-  };
-
-  return [...base[riskLevel], ...(specific[type] || [])];
+  return [
+    'Do not click suspicious links.',
+    'Do not download unexpected attachments.',
+    'Do not provide passwords or personal information.',
+    'Report or delete the message if confirmed malicious.'
+  ];
 };
 
 module.exports = { analyzeURL, analyzeText, analyzeWhatsApp };

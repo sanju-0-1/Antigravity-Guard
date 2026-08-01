@@ -521,6 +521,64 @@
   color: var(--danger);
 }
 
+.result-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+
+.detail-section {
+  padding: 1.2rem 1.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s ease;
+}
+
+.detail-section.safe-section {
+  border-left: 4px solid var(--safe);
+  background: rgba(34, 197, 94, 0.04);
+}
+
+.detail-section.warning-section {
+  border-left: 4px solid var(--danger);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.detail-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+}
+
+.detail-section.safe-section h4 {
+  color: var(--safe);
+}
+
+.detail-section.warning-section h4 {
+  color: var(--danger);
+}
+
+.detail-section ul {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.detail-section li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.detail-section li:last-child {
+  margin-bottom: 0;
+}
+
 /* AI Assistant */
 .ai-container {
   position: fixed;

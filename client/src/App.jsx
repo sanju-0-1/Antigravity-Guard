@@ -63,7 +63,15 @@ function App() {
     try {
       const res = await axios.get(`${API_URL}/history`, getAuthHeaders());
       setHistory(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setView('login');
+      }
+    }
   };
 
   const [isDragOver, setIsDragOver] = useState(false);
@@ -113,7 +121,15 @@ function App() {
       setResult(res.data);
       fetchHistory();
     } catch (err) {
-      alert(err.response?.data?.error || 'Scan failed.');
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setView('login');
+        alert('Your session has expired. Please log in again.');
+      } else {
+        alert(err.response?.data?.error || 'Scan failed.');
+      }
     } finally { setIsScanning(false); }
   };
 
@@ -123,7 +139,16 @@ function App() {
     try {
       await axios.post(`${API_URL}/report/${result._id}`, {}, getAuthHeaders());
       setResult({ ...result, reportedByCommunity: true, reportCount: (result.reportCount || 0) + 1 });
-    } catch (err) { alert('Already reported.'); } finally { setIsReporting(false); }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setView('login');
+      } else {
+        alert('Already reported.');
+      }
+    } finally { setIsReporting(false); }
   };
 
   const handleSendMessage = async (e) => {
@@ -438,18 +463,68 @@ function App() {
               </div>
 
               <div className="result-details">
-                {result.details && result.details.length > 0 && (
-                  <div className="detail-section">
-                    <h4><AlertTriangle size={16} /> Why this is risky</h4>
-                    <ul>{result.details.map((d, i) => <li key={i}>{d}</li>)}</ul>
-                  </div>
-                )}
-                {result.recommendations && result.recommendations.length > 0 && (
-                  <div className="detail-section">
-                    <h4><ShieldCheck size={16} /> Recommended Action</h4>
-                    <ul>{result.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
-                  </div>
-                )}
+                {(() => {
+                  const isSafe = (result.riskScore === 0) || (result.riskLevel === 'Safe');
+                  const displayDetails = isSafe 
+                    ? ['No common phishing indicators were detected during analysis. The message does not contain suspicious links, credential requests, impersonation attempts, or other common phishing techniques.']
+                    : (result.details || []);
+
+                  const displayRecs = isSafe 
+                    ? [
+                        'The message appears safe based on our current analysis.',
+                        'Continue using normal caution when interacting with emails or messages.',
+                        'Verify the sender if the request is unexpected or involves sensitive information.',
+                        'Never share passwords or one-time verification codes.'
+                      ]
+                    : (result.recommendations || []).filter(r => !['Ignore the threats in this message.', 'Delete this to stay safe.'].includes(r));
+
+                  if (displayRecs.length === 0 && !isSafe) {
+                    displayRecs.push(
+                      'Do not click suspicious links.',
+                      'Do not download unexpected attachments.',
+                      'Do not provide passwords or personal information.',
+                      'Report or delete the message if confirmed malicious.'
+                    );
+                  }
+
+                  return (
+                    <>
+                      <div className={`detail-section ${isSafe ? 'safe-section' : 'warning-section'}`}>
+                        <h4>
+                          {isSafe ? (
+                            <>
+                              <CheckCircle size={18} color="var(--safe)" /> Why this appears safe
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle size={18} color="var(--danger)" /> Why this is risky
+                            </>
+                          )}
+                        </h4>
+                        <ul>{displayDetails.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                      </div>
+
+                      <div className={`detail-section ${isSafe ? 'safe-section' : 'warning-section'}`}>
+                        <h4>
+                          <ShieldCheck size={18} color={isSafe ? "var(--safe)" : "var(--warning)"} /> Recommended Actions
+                        </h4>
+                        <ul>{displayRecs.map((r, i) => <li key={i}>{r}</li>)}</ul>
+                      </div>
+
+                      <div className={`detail-section ${isSafe ? 'safe-section' : 'warning-section'}`}>
+                        <h4>
+                          <Info size={18} color={isSafe ? "var(--safe)" : "var(--primary)"} /> AI Real-World Example (Easy Explanation)
+                        </h4>
+                        <p className="example-text">
+                          {result.example || (isSafe 
+                            ? "Think of this like a friendly letter from a known contact: it doesn't demand your secrets, passwords, or money, so it is safe to interact with."
+                            : "Think of this like a stranger at your front door claiming to be a bank official, demanding your wallet and passwords immediately. Real organizations will never ask for your secrets on the spot."
+                          )}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </motion.div>
           </motion.div>

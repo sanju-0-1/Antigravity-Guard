@@ -45,11 +45,11 @@ app.post('/api/scan', protect, async (req, res) => {
 
     let analysisResults;
     if (type === 'url') {
-      analysisResults = analyzeURL(content);
+      analysisResults = await analyzeURL(content);
     } else if (type === 'whatsapp') {
-      analysisResults = analyzeWhatsApp(content);
+      analysisResults = await analyzeWhatsApp(content);
     } else {
-      analysisResults = analyzeText(content);
+      analysisResults = await analyzeText(content);
     }
 
     const scanData = {
@@ -110,7 +110,7 @@ app.post('/api/scan-image', protect, upload.single('image'), async (req, res) =>
       return res.status(400).json({ error: 'Could not extract text from image' });
     }
 
-    const analysisResults = analyzeText(text);
+    const analysisResults = await analyzeText(text);
 
     const scanData = {
       userId: req.user ? req.user._id : 'guest',

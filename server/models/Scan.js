@@ -8,7 +8,7 @@ const scanSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['url', 'text'],
+    enum: ['url', 'text', 'whatsapp'],
     required: true
   },
   content: {
@@ -43,6 +43,10 @@ const scanSchema = new mongoose.Schema({
   recommendations: {
     type: [String],
     default: []
+  },
+  example: {
+    type: String,
+    default: ''
   },
   createdAt: {
     type: Date,
